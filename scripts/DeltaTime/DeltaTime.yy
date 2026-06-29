@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"DeltaTime",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"DeltaTime",
+  "parent":{
+    "name":"scripts",
+    "path":"folders/scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

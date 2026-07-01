@@ -9,22 +9,28 @@ function Collider(mirror = other) constructor {
 	
 	velocity = {x: 0, y: 0};
 	terminal = {x: speed, y: jump_height};
+		tvelx = clamp(velocity.x, -terminal.x, terminal.x);
+		tvely = clamp(velocity.y, -terminal.y, terminal.y);
+	
 	grounded = false;
 
 	block = oBlock;
 	platform = oPlatform;
 	
 	static step = function(time = 1) {
-		var tvelx = clamp(velocity.x, -terminal.x, terminal.x);
-		var tvely = clamp(velocity.y, -terminal.y, terminal.y);
+		tvelx = clamp(velocity.x, -terminal.x, terminal.x);
+		tvely = clamp(velocity.y, -terminal.y, terminal.y);
 		
 		with (parent) {	//vertical check
 			var py = y;
 			var hit = false;
+			var plat = noone;
 			
-			if (tvely > 0){
-				repeat ceil(abs(tvely)) {
-					if (place_meeting(x, y + sign(tvely), oPlatform) and !place_meeting(x, y, oPlatform)) {
+			if (other.tvely > 0){
+				repeat ceil(abs(other.tvely)) {
+					plat = instance_place(x, y + sign(other.tvely), oPlatform);
+					
+					if (plat != noone and !place_meeting(x, y, plat)) {
 						other.velocity.y = 0;
 						other.grounded = true;
 						other.jumped = false;
@@ -32,38 +38,38 @@ function Collider(mirror = other) constructor {
 						break;
 					}
 					
-					y += sign(tvely);
+					y += sign(other.tvely);
 				}
 			}
 			
 			if (!hit) {
 				y = py;
 				
-				repeat ceil(abs(tvely)) {
-					if (place_meeting(x, y + sign(tvely), oBlock)) {
+				repeat ceil(abs(other.tvely)) {
+					if (place_meeting(x, y + sign(other.tvely), oBlock)) {
 						other.velocity.y = 0;
 						other.grounded = true;
 						other.jumped = false;
 						break;
 					}
 					
-					y += sign(tvely);
+					y += sign(other.tvely);
 				}
 			}
 			
-			other.grounded = !other.jumped and (place_meeting(x, y + 1, other.block) or (place_meeting(x, y + 1, other.platform) and !place_meeting(x, y, other.platform)));
+			other.grounded = !other.jumped and (place_meeting(x, y + 1, other.block) or (plat != noone and !place_meeting(x, y, plat)));
 			if (!other.grounded) other.velocity.y += other.gravity * time;
 			
-			repeat ceil(abs(other.speed * tvelx)) {
-				if (place_meeting(x + sign(tvelx), y, oBlock)) {
+			repeat ceil(abs(other.speed * other.tvelx)) {
+				if (place_meeting(x + sign(other.tvelx), y, oBlock)) {
 					other.velocity.x = 0;
 					break;
 				}
 				
-				x += sign(tvelx)
+				x += sign(other.tvelx)
 			}
 			
-			other.velocity.x = sign(other.velocity.x) * clamp(abs(other.velocity.x) - other.friction * time, 0, infinity);
+			other.velocity.x = sign(other.velocity.x) * (clamp(abs(other.velocity.x) - other.friction * time, 0, infinity));
 		}
 	}
 	
@@ -87,7 +93,9 @@ function Collider(mirror = other) constructor {
 	
 	static pass_trough = function() {
 		with (parent) {
-			if (place_meeting(x, y + 1, other.platform) and !place_meeting(x, y, other.platform) and !place_meeting(x, y + 1, other.block)) {
+			var plat = instance_place(x, y + 1, oPlatform);
+					
+			if (plat != noone and !place_meeting(x, y, plat)) {
 				y++;
 			}
 		}
@@ -98,9 +106,14 @@ function Collider(mirror = other) constructor {
 			velocity.y = -jump_height;	
 			jumped = true;
 			grounded = false;
+			
+			return true;
 		}
 		
+		return false;
+	}
+	
+	static glide = function(time = 1){
 		if (jumped) velocity.y -= (gravity / 3) * time;
-		
 	}
 }
